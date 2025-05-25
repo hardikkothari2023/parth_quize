@@ -33,7 +33,6 @@ Welcome! This quiz tests your knowledge on **Arithmetic**, **Comparison**, **Ass
 🎯 Try to score at least **18** for a treat or **20** for a FreeFire bonus!
 """)
 
-# Quiz questions
 questions = [
     ("What is the output of: 7 + 3 * 2", ["13", "20", "17", "10"], "13"),
     ("What does 'a = 10; a //= 3; print(a)' output?", ["3", "3.3", "4", "Error"], "3"),
@@ -57,65 +56,81 @@ questions = [
     ("Output of: a=10; a /= 2; print(a)", ["5.0", "5", "2", "Error"], "5.0")
 ]
 
-# Shuffle questions once per session
-if "questions" not in st.session_state:
-    st.session_state.questions = questions.copy()
-    random.shuffle(st.session_state.questions)
+# Shuffle questions once
+if "shuffled_questions" not in st.session_state:
+    st.session_state.shuffled_questions = questions.copy()
+    random.shuffle(st.session_state.shuffled_questions)
 
-# Form
+total_questions = len(st.session_state.shuffled_questions)
+
+# Store user answers persistently in session_state
+if "answers" not in st.session_state:
+    st.session_state.answers = [None] * total_questions
+
+# Show progress bar
+answered_count = sum([1 for ans in st.session_state.answers if ans is not None])
+progress = answered_count / total_questions
+st.markdown("## 📊 Progress")
+progress_bar = st.progress(progress)
+
+# Quiz form
 with st.form("quiz_form"):
-    answers = []
-    total_qs = 20
-    answered = 0
 
-    st.markdown("## 📊 Progress")
-    progress_bar = st.progress(0)
+    for i, (q, opts, _) in enumerate(st.session_state.shuffled_questions):
+        # Shuffle options for each question to avoid pattern, but fix shuffle so it's stable per session
+        # For that, shuffle options once per question in session_state
+        if f"opts_{i}" not in st.session_state:
+            opts_shuffled = opts.copy()
+            random.shuffle(opts_shuffled)
+            st.session_state[f"opts_{i}"] = opts_shuffled
+        else:
+            opts_shuffled = st.session_state[f"opts_{i}"]
 
-    for i, (question, options, correct) in enumerate(st.session_state.questions[:total_qs]):
-        st.markdown(f"### Q{i+1}")
-        shuffled = options.copy()
-        random.shuffle(shuffled)
-        selected = st.radio(question, shuffled, key=f"q{i}", index=None)
+        # Default index for radio to keep selection stable
+        default_index = None
+        if st.session_state.answers[i] in opts_shuffled:
+            default_index = opts_shuffled.index(st.session_state.answers[i])
 
-        if selected is not None:
-            answered += 1
-        progress_bar.progress(answered / total_qs)
-        answers.append((selected, correct))
+        answer = st.radio(f"Q{i+1}: {q}", opts_shuffled, index=default_index, key=f"q{i}")
+
+        st.session_state.answers[i] = answer
 
     submitted = st.form_submit_button("🚀 Submit Quiz")
 
-# Results
 if submitted:
-    score = 0
-    st.markdown("---")
-    st.subheader("📢 Result Breakdown")
-
-    for i, (selected, correct) in enumerate(answers):
-        if selected == correct:
-            st.success(f"Q{i+1} ✅ Correct (+1)")
-            score += 1
-        else:
-            st.error(f"Q{i+1} ❌ Wrong! Correct answer: {correct}")
-
-    st.markdown("---")
-    st.subheader(f"🎯 Final Score: **{score}/20**")
-    st.session_state.score = score
-
-    # 🎉 Rewards
-    if score == 20:
-        st.balloons()
-        st.success("🏆 Perfect score! You can play FreeFire for 1:30 hours! 🔥🎮")
-        st.markdown("🎊🎊🎊 **GOD LEVEL!** 🎊🎊🎊")
-    elif score >= 18:
-        st.balloons()
-        st.success("🎉 Great job! You get a special treat from Papa! 🍫🥳")
-        st.markdown("🎉 🎉 Keep it up! 🎉 🎉")
-    elif score >= 15:
-        st.info("👏 Nice! You’re close to mastery. Keep practicing!")
-        st.markdown("💪💪 You're doing great!")
-    elif score >= 10:
-        st.info("👍 Good effort! Keep practicing.")
-        st.markdown("🌱 Practice makes perfect!")
+    # Check if all questions answered
+    if None in st.session_state.answers:
+        st.warning("⚠️ Please answer all questions before submitting!")
     else:
-        st.warning("📚 Keep learning! Try again after some revision.")
-        st.markdown("😅 Better luck next time!")
+        score = 0
+        st.markdown("---")
+        st.subheader("📢 Result Breakdown")
+
+        for i, (selected, (_, _, correct)) in enumerate(zip(st.session_state.answers, st.session_state.shuffled_questions)):
+            if selected == correct:
+                st.success(f"Q{i+1} ✅ Correct (+1)")
+                score += 1
+            else:
+                st.error(f"Q{i+1} ❌ Wrong! Correct answer: {correct}")
+
+        st.markdown("---")
+        st.subheader(f"🎯 Final Score: **{score}/{total_questions}**")
+        st.session_state.score = score
+
+        if score == total_questions:
+            st.balloons()
+            st.success("🏆 Perfect score! You can play FreeFire for 1:30 hours! 🔥🎮")
+            st.markdown("🎊🎊🎊 **GOD LEVEL!** 🎊🎊🎊")
+        elif score >= 18:
+            st.balloons()
+            st.success("🎉 Great job! You get a special treat from Papa! 🍫🥳")
+            st.markdown("🎉 🎉 Keep it up! 🎉 🎉")
+        elif score >= 15:
+            st.info("👏 Nice! You’re close to mastery. Keep practicing!")
+            st.markdown("💪💪 You're doing great!")
+        elif score >= 10:
+            st.info("👍 Good effort! Keep practicing.")
+            st.markdown("🌱 Practice makes perfect!")
+        else:
+            st.warning("📚 Keep learning! Try again after some revision.")
+            st.markdown("😅 Better luck next time!")
