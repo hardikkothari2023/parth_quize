@@ -3,7 +3,7 @@ import random
 
 st.set_page_config(page_title="🎉 Operator Quiz for Parth", layout="centered")
 
-# 💅 Stylish UI
+# Stylish UI
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] > .main {
@@ -33,12 +33,12 @@ Welcome! This quiz tests your knowledge on **Arithmetic**, **Comparison**, **Ass
 🎯 Try to score at least **18** for a treat or **20** for a FreeFire bonus!
 """)
 
-# Quiz Questions
+# Quiz questions
 questions = [
-    ("What is the output of: 7 + 3 * 2", ["20", "13", "17", "10"], "13"),
+    ("What is the output of: 7 + 3 * 2", ["13", "20", "17", "10"], "13"),
     ("What does 'a = 10; a //= 3; print(a)' output?", ["3", "3.3", "4", "Error"], "3"),
-    ("Result of: print(5 == 5 and 7 > 3)", ["False", "True", "Error", "None"], "True"),
-    ("Output of: x=4; x **= 2; print(x)", ["8", "16", "4", "Error"], "16"),
+    ("Result of: print(5 == 5 and 7 > 3)", ["True", "False", "Error", "None"], "True"),
+    ("Output of: x=4; x **= 2; print(x)", ["16", "8", "4", "Error"], "16"),
     ("What will print: print(not (5 > 3))", ["False", "True", "None", "Error"], "False"),
     ("Output: print(8 % 3)", ["2", "1", "3", "0"], "2"),
     ("What does 'a = 5; a += 3; print(a)' output?", ["8", "53", "5", "3"], "8"),
@@ -50,18 +50,19 @@ questions = [
     ("Result of: print(4 > 5 or 5 < 6)", ["True", "False", "Error", "None"], "True"),
     ("What is output: print(6 == 6 or 2 != 2)", ["True", "False", "Error", "None"], "True"),
     ("Output: print(15 % 4)", ["3", "4", "2", "1"], "3"),
-    ("What does this print? x=3; x *= 4; print(x)", ["7", "12", "3", "Error"], "12"),
+    ("What does this print? x=3; x *= 4; print(x)", ["12", "7", "3", "Error"], "12"),
     ("Output: print( not False and True )", ["True", "False", "Error", "None"], "True"),
     ("What is printed by 'print(5 != 5)'?", ["False", "True", "None", "Error"], "False"),
     ("Result of: print(8 > 3 and 3 < 2)", ["False", "True", "Error", "None"], "False"),
     ("Output of: a=10; a /= 2; print(a)", ["5.0", "5", "2", "Error"], "5.0")
 ]
 
-# Shuffle once per session
+# Shuffle questions once per session
 if "questions" not in st.session_state:
     st.session_state.questions = questions.copy()
     random.shuffle(st.session_state.questions)
 
+# Form
 with st.form("quiz_form"):
     answers = []
     total_qs = 20
@@ -72,17 +73,18 @@ with st.form("quiz_form"):
 
     for i, (question, options, correct) in enumerate(st.session_state.questions[:total_qs]):
         st.markdown(f"### Q{i+1}")
-        shuffled_options = options.copy()
-        random.shuffle(shuffled_options)
-        selected = st.radio(question, shuffled_options, key=f"q{i}", index=None)
+        shuffled = options.copy()
+        random.shuffle(shuffled)
+        selected = st.radio(question, shuffled, key=f"q{i}", index=None)
 
-        if selected:  # If user picked an option
+        if selected is not None:
             answered += 1
         progress_bar.progress(answered / total_qs)
         answers.append((selected, correct))
 
     submitted = st.form_submit_button("🚀 Submit Quiz")
 
+# Results
 if submitted:
     score = 0
     st.markdown("---")
@@ -99,7 +101,7 @@ if submitted:
     st.subheader(f"🎯 Final Score: **{score}/20**")
     st.session_state.score = score
 
-    # 🎉 Rewards with confetti + emoji
+    # 🎉 Rewards
     if score == 20:
         st.balloons()
         st.success("🏆 Perfect score! You can play FreeFire for 1:30 hours! 🔥🎮")
